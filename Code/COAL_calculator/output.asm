@@ -1,11 +1,17 @@
 INCLUDE Irvine32.inc
 
+EXTERN resultMsg:BYTE
+
 .code
 
-OutputProc PROC
+DisplayResult PROC
+
+    mov edx, OFFSET resultMsg
+    call WriteString
+    call CrlF
 
     ret
 
-OutputProc ENDP
+DisplayResult ENDP
 
 END
