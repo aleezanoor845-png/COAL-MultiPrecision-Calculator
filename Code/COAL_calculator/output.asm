@@ -2,10 +2,10 @@ INCLUDE Irvine32.inc
 
 .code
 
-DisplayResult PROC
+OutputProc PROC
 
     ret
 
-DisplayResult ENDP
+OutputProc ENDP
 
 END

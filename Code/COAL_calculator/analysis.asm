@@ -2,10 +2,10 @@ INCLUDE Irvine32.inc
 
 .code
 
-AnalyzeInput PROC
+AnalysisProc PROC
 
     ret
 
-AnalyzeInput ENDP
+AnalysisProc ENDP
 
 END
