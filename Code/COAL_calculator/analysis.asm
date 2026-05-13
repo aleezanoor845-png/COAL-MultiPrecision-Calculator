@@ -2,7 +2,8 @@ INCLUDE Irvine32.inc
 
 .data
 
-analysisMsg BYTE "Running Analysis...",0dh,0ah,0
+analysisMsg BYTE 0dh,0ah
+            BYTE "Running Performance Analysis...",0dh,0ah,0
 
 .code
 

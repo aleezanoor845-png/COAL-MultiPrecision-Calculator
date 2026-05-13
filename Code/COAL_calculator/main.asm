@@ -5,15 +5,22 @@ RunAnalysis PROTO
 
 .data
 
-menuMsg BYTE "====== Multi-Precision Calculator ======",0dh,0ah
-         BYTE "1. Show Result",0dh,0ah
-         BYTE "2. Run Analysis",0dh,0ah
-         BYTE "3. Exit",0dh,0ah
+titleMsg BYTE 0dh,0ah
+          BYTE "======================================",0dh,0ah
+          BYTE "     MULTI-PRECISION CALCULATOR",0dh,0ah
+          BYTE "======================================",0dh,0ah,0
+
+menuMsg BYTE 0dh,0ah
+         BYTE "1. Addition",0dh,0ah
+         BYTE "2. Subtraction",0dh,0ah
+         BYTE "3. Multiplication",0dh,0ah
+         BYTE "4. Run Analysis",0dh,0ah
+         BYTE "5. Exit",0dh,0ah
+         BYTE "--------------------------------------",0dh,0ah
          BYTE "Enter choice: ",0
 
-PUBLIC resultMsg
-
-resultMsg BYTE "Large Number Result Displayed Successfully!",0dh,0ah,0
+invalidMsg BYTE 0dh,0ah
+           BYTE "Invalid choice! Try again.",0dh,0ah,0
 
 choice DWORD ?
 
@@ -23,6 +30,11 @@ main PROC
 
 menuLoop:
 
+    call Clrscr
+
+    mov edx, OFFSET titleMsg
+    call WriteString
+
     mov edx, OFFSET menuMsg
     call WriteString
 
@@ -30,23 +42,36 @@ menuLoop:
     mov choice, eax
 
     cmp choice, 1
-    je displayOption
+    je operationOption
 
     cmp choice, 2
-    je analysisOption
+    je operationOption
 
     cmp choice, 3
+    je operationOption
+
+    cmp choice, 4
+    je analysisOption
+
+    cmp choice, 5
     je exitProgram
 
-    call CrlF
+    mov edx, OFFSET invalidMsg
+    call WriteString
+    call WaitMsg
+
     jmp menuLoop
 
-displayOption:
+operationOption:
+
     call DisplayResult
+    call WaitMsg
     jmp menuLoop
 
 analysisOption:
+
     call RunAnalysis
+    call WaitMsg
     jmp menuLoop
 
 exitProgram:
