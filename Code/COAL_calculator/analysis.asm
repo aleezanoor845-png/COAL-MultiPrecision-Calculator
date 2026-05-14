@@ -1,11 +1,19 @@
 INCLUDE Irvine32.inc
 
+.data
+
+analysisMsg BYTE 0dh,0ah
+            BYTE "Running Performance Analysis...",0dh,0ah,0
+
 .code
 
-AnalyzeInput PROC
+RunAnalysis PROC
+
+    mov edx, OFFSET analysisMsg
+    call WriteString
 
     ret
 
-AnalyzeInput ENDP
+RunAnalysis ENDP
 
 END
