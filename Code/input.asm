@@ -1,28 +1,38 @@
 ; ============================================
 ; Member 1: Aleeza Noor
-; Module: Input & Storage
+; Module: Input
 ; File: input.asm
+; Purpose: Read user input into inputBuffer
 ; ============================================
+
 INCLUDE Irvine32.inc
 
+PUBLIC ReadNumber
+
+EXTERN inputBuffer:BYTE
+
+MAX_INPUT EQU 209
+
 .data
-    prompt      BYTE "Enter a large number: ", 0
-    inputBuffer BYTE 210 DUP(0)
+    prompt BYTE "Enter a large number: ", 0
 
 .code
 
-; ----------------------------
+; --------------------------------------------
 ; ReadNumber
-; Reads user input into inputBuffer
-; Output: inputBuffer filled, EAX = length
-; ----------------------------
+; Reads a large number from the user.
+;
+; Output:
+;   inputBuffer contains the typed number.
+; --------------------------------------------
 ReadNumber PROC
-    mov  edx, OFFSET prompt
+    mov edx, OFFSET prompt
     call WriteString
-    mov  edx, OFFSET inputBuffer
-    mov  ecx, 210
+
+    mov edx, OFFSET inputBuffer
+    mov ecx, MAX_INPUT
     call ReadString
-    ; EAX already = number of chars read (Irvine ReadString sets this)
+
     ret
 ReadNumber ENDP
 
