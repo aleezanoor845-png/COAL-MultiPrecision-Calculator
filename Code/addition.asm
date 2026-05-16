@@ -1,89 +1,33 @@
+; Member 2 - Hina Naeem
+; addition.asm
+; Signed addition for large numbers stored as reversed digit arrays.
+; Reads num1 and num2, writes answer to result/resultLen/resultSign.
+
 INCLUDE Irvine32.inc
 
-MAX_DIGITS EQU 200
+PUBLIC AddLarge
 
-.data
-    num1        BYTE MAX_DIGITS DUP(0)
-    num2        BYTE MAX_DIGITS DUP(0)
-    result      BYTE 201 DUP(0)
-    num1Len     DWORD 0
-    num2Len     DWORD 0
-    resultLen   DWORD 0
-    num1Sign    BYTE 0
-    num2Sign    BYTE 0
-    resultSign  BYTE 0
-    prompt1     BYTE "Enter first number: ", 0
-    prompt2     BYTE "Enter second number: ", 0
-    resMsg      BYTE "Result: ", 0
-    negSign     BYTE "-", 0
+CompareNumbers PROTO
+ClearArray PROTO
+
+EXTERN num1:BYTE
+EXTERN num2:BYTE
+EXTERN result:BYTE
+EXTERN num1Len:DWORD
+EXTERN num2Len:DWORD
+EXTERN resultLen:DWORD
+EXTERN num1Sign:BYTE
+EXTERN num2Sign:BYTE
+EXTERN resultSign:BYTE
+
+MAX_RESULT_DIGITS EQU 400
 
 .code
 
-ReadNumber PROC
-    push ebx
-    push ecx
-
-    mov ecx, 0
-    mov BYTE PTR [edi], 0
-
-readLoop:
-    call ReadChar
-    cmp al, '-'
-    jne checkDigit
-    mov BYTE PTR [edi], 1
-    call WriteChar
-    call ReadChar
-
-checkDigit:
-    cmp al, 13
-    je readDone
-    cmp al, '0'
-    jl skipChar
-    cmp al, '9'
-    jg skipChar
-
-    push eax
-    call WriteChar
-    pop eax
-
-    sub al, '0'
-    mov [esi + ecx], al
-    inc ecx
-
-skipChar:
-    call ReadChar
-    jmp checkDigit
-
-readDone:
-    call CrlF
-
-    mov edx, ecx
-    dec edx
-    push ecx
-    xor ecx, ecx
-
-reverseLoop:
-    cmp ecx, edx
-    jge reverseDone
-    mov al, [esi + ecx]
-    xchg al, [esi + edx]
-    mov [esi + ecx], al
-    inc ecx
-    dec edx
-    jmp reverseLoop
-
-reverseDone:
-    pop eax
-    pop ecx
-    pop ebx
-    ret
-ReadNumber ENDP
-
-
-; adds two numbers of the same sign (magnitudes only)
-; result stored in result[], resultLen updated
-AddMagnitudes PROC
-    pushad
+PlainAdd PROC USES esi ebx ecx edx eax edi
+    mov edi, OFFSET result
+    mov ecx, MAX_RESULT_DIGITS
+    call ClearArray
 
     xor esi, esi
     xor ebx, ebx
@@ -91,29 +35,29 @@ AddMagnitudes PROC
     mov eax, num1Len
     mov ecx, num2Len
     cmp eax, ecx
-    jge pickLen
+    jge lengthSet
     mov eax, ecx
 
-pickLen:
+lengthSet:
     mov ecx, eax
 
-addLoop:
+digitLoop:
     cmp esi, ecx
-    jge checkCarry
+    jge leftoverCarry
 
     xor eax, eax
     xor edx, edx
 
     cmp esi, num1Len
-    jge skipA
-    movzx eax, num1[esi]
+    jge getNum2Only
+    movzx eax, BYTE PTR num1[esi]
 
-skipA:
+getNum2Only:
     cmp esi, num2Len
-    jge skipB
-    movzx edx, num2[esi]
+    jge addCarry
+    movzx edx, BYTE PTR num2[esi]
 
-skipB:
+addCarry:
     add eax, edx
     add eax, ebx
     xor ebx, ebx
@@ -124,226 +68,153 @@ skipB:
     mov ebx, 1
 
 saveIt:
-    mov result[esi], al
+    mov BYTE PTR result[esi], al
     inc esi
-    jmp addLoop
+    jmp digitLoop
 
-checkCarry:
+leftoverCarry:
     cmp ebx, 0
-    je addFinished
-    mov result[esi], bl
+    je saveFinalLen
+    mov BYTE PTR result[esi], bl
     inc esi
 
-addFinished:
+saveFinalLen:
     mov resultLen, esi
-    popad
     ret
-AddMagnitudes ENDP
+PlainAdd ENDP
 
 
-; subtracts num2 from num1 assuming num1 >= num2 by magnitude
-SubMagnitudes PROC
-    pushad
+PlainSub PROC USES esi ebx ecx edx eax edi
+    mov edi, OFFSET result
+    mov ecx, MAX_RESULT_DIGITS
+    call ClearArray
 
     xor esi, esi
     xor ebx, ebx
     mov ecx, num1Len
 
-subLoop:
+borrowLoop:
     cmp esi, ecx
-    jge subFinished
+    jge trimAndSave
 
-    movzx eax, num1[esi]
+    movzx eax, BYTE PTR num1[esi]
     xor edx, edx
 
     cmp esi, num2Len
-    jge skipSub
-    movzx edx, num2[esi]
+    jge skipSecond
+    movzx edx, BYTE PTR num2[esi]
 
-skipSub:
+skipSecond:
     sub eax, edx
     sub eax, ebx
     xor ebx, ebx
 
     cmp eax, 0
-    jge saveDigit
+    jge noNeed
     add eax, 10
     mov ebx, 1
 
-saveDigit:
-    mov result[esi], al
+noNeed:
+    mov BYTE PTR result[esi], al
     inc esi
-    jmp subLoop
+    jmp borrowLoop
 
-subFinished:
+trimAndSave:
     mov resultLen, esi
-    popad
-    ret
-SubMagnitudes ENDP
-
-
-; compares magnitudes of num1 and num2
-; returns 0=equal, 1=num1 bigger, 2=num2 bigger in EAX
-CompareMag PROC
-    push ebx
-    push esi
-
-    mov eax, num1Len
-    mov ebx, num2Len
-    cmp eax, ebx
-    jg mag1bigger
-    jl mag2bigger
-
-    mov esi, eax
     dec esi
 
-magLoop:
+trimZeros:
     cmp esi, 0
-    jl magEqual
-    movzx eax, num1[esi]
-    movzx ebx, num2[esi]
-    cmp eax, ebx
-    jg mag1bigger
-    jl mag2bigger
+    je keepOne
+    cmp BYTE PTR result[esi], 0
+    jne stopTrim
     dec esi
-    jmp magLoop
+    jmp trimZeros
 
-magEqual:
-    mov eax, 0
-    jmp magDone
-
-mag1bigger:
-    mov eax, 1
-    jmp magDone
-
-mag2bigger:
-    mov eax, 2
-
-magDone:
-    pop esi
-    pop ebx
+stopTrim:
+    inc esi
+    mov resultLen, esi
     ret
-CompareMag ENDP
 
-
-PrintResult PROC
-    pushad
-
-    mov al, resultSign
-    cmp al, 1
-    jne skipMinus
-    mov edx, OFFSET negSign
-    call WriteString
-
-skipMinus:
-    mov esi, resultLen
-    dec esi
-
-; skip leading zeros but always print the last digit
-skipZeros:
-    cmp esi, 0
-    je printNow
-    movzx eax, result[esi]
-    cmp eax, 0
-    jne printNow
-    dec esi
-    jmp skipZeros
-
-printNow:
-printLoop:
-    cmp esi, 0
-    jl printDone
-    movzx eax, result[esi]
-    add eax, '0'
-    call WriteChar
-    dec esi
-    jmp printLoop
-
-printDone:
-    call CrlF
-    popad
+keepOne:
+    mov resultLen, 1
+    mov resultSign, 0
     ret
-PrintResult ENDP
+PlainSub ENDP
 
 
-main PROC
-    mov edx, OFFSET prompt1
-    call WriteString
-    mov esi, OFFSET num1
-    lea edi, num1Sign
-    call ReadNumber
-    mov num1Len, eax
-
-    mov edx, OFFSET prompt2
-    call WriteString
-    mov esi, OFFSET num2
-    lea edi, num2Sign
-    call ReadNumber
-    mov num2Len, eax
+AddLarge PROC USES eax ebx
 
     mov al, num1Sign
     mov bl, num2Sign
     cmp al, bl
-    jne signsDiffer
+    jne handleDifferentSigns
 
-    ; same sign: add magnitudes, keep the sign
-    mov al, num1Sign
     mov resultSign, al
-    call AddMagnitudes
-    jmp showResult
+    call PlainAdd
+    ret
 
-signsDiffer:
-    ; different signs: subtract smaller from larger
-    ; result sign = sign of whichever is bigger
-    call CompareMag
+handleDifferentSigns:
+    call CompareNumbers
 
     cmp eax, 0
-    je zeroResult
+    jne notZero
+    mov BYTE PTR result[0], 0
+    mov resultLen, 1
+    mov resultSign, 0
+    ret
 
+notZero:
     cmp eax, 1
-    je num1bigger
+    jne num2HasBiggerMag
 
-    ; num2 magnitude is bigger — swap so num1 always holds the bigger
+    mov al, num1Sign
+    mov resultSign, al
+    call PlainSub
+    ret
+
+num2HasBiggerMag:
     mov al, num2Sign
     mov resultSign, al
 
-    mov ecx, MAX_DIGITS
+    mov eax, num1Len
+    xchg eax, num2Len
+    mov num1Len, eax
+
+    mov ecx, 200
     lea esi, num1
     lea edi, num2
 
-swapLoop:
+swapBytes:
     mov al, [esi]
     mov ah, [edi]
     mov [esi], ah
     mov [edi], al
     inc esi
     inc edi
-    loop swapLoop
+    loop swapBytes
+
+    call PlainSub
 
     mov eax, num1Len
     xchg eax, num2Len
     mov num1Len, eax
-    jmp doSub
 
-num1bigger:
-    mov al, num1Sign
-    mov resultSign, al
+    mov ecx, 200
+    lea esi, num1
+    lea edi, num2
 
-doSub:
-    call SubMagnitudes
-    jmp showResult
+swapBack:
+    mov al, [esi]
+    mov ah, [edi]
+    mov [esi], ah
+    mov [edi], al
+    inc esi
+    inc edi
+    loop swapBack
 
-zeroResult:
-    mov resultSign, 0
-    mov result[0], 0
-    mov resultLen, 1
+    ret
 
-showResult:
-    mov edx, OFFSET resMsg
-    call WriteString
-    call PrintResult
+AddLarge ENDP
 
-    exit
-main ENDP
-
-END main
+END
