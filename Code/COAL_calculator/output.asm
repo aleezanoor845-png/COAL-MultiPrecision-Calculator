@@ -3,7 +3,7 @@ INCLUDE Irvine32.inc
 .data
 
 resultMsg BYTE 0dh,0ah
-          BYTE "Operation Completed Successfully!",0dh,0ah,0
+          BYTE "Arithmetic module placeholder executed.",0dh,0ah,0
 
 .code
 

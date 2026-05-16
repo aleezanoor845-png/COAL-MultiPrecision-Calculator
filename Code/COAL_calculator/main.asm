@@ -59,7 +59,6 @@ menuLoop:
     mov edx, OFFSET invalidMsg
     call WriteString
     call WaitMsg
-
     jmp menuLoop
 
 operationOption:
