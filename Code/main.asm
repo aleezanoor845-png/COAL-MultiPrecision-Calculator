@@ -11,6 +11,7 @@ StringToArray PROTO
 AddLarge PROTO
 SubtractLarge PROTO
 MultiplyLarge PROTO
+RunExpressionMode PROTO
 
 DisplayResult PROTO
 RunAnalysis PROTO
@@ -27,13 +28,15 @@ EXTERN num2Sign:BYTE
     option1 BYTE "1. Addition", 0
     option2 BYTE "2. Subtraction", 0
     option3 BYTE "3. Multiplication", 0
-    option4 BYTE "4. Exit", 0
+    option4 BYTE "4. Expression Mode - choose this before typing full expression", 0
+    option5 BYTE "5. Exit", 0
     choiceMsg BYTE "Enter choice: ", 0
     firstMsg BYTE "First number", 0
     secondMsg BYTE "Second number", 0
     invalidChoiceMsg BYTE "Invalid choice!", 0
     invalidInputMsg BYTE "Please enter the numbers again.", 0
     lineMsg BYTE "----------------------------------------", 0
+    choiceBuffer BYTE 20 DUP(0)
     choice DWORD 0
 
 .code
@@ -65,10 +68,42 @@ ShowMenu PROC
     call WriteString
     call CrlF
 
+    mov edx, OFFSET option5
+    call WriteString
+    call CrlF
+
     mov edx, OFFSET choiceMsg
     call WriteString
     ret
 ShowMenu ENDP
+
+; ReadMenuChoice reads the full choice line.
+; This avoids Irvine's "<invalid integer>" message if a user types text.
+; Output:
+;   EAX = 1 to 5 for a valid choice
+;   EAX = 0 for invalid input
+ReadMenuChoice PROC USES edx ecx
+    mov edx, OFFSET choiceBuffer
+    mov ecx, SIZEOF choiceBuffer
+    call ReadString
+
+    cmp eax, 1
+    jne badChoice
+
+    mov al, choiceBuffer[0]
+    cmp al, '1'
+    jl badChoice
+    cmp al, '5'
+    jg badChoice
+
+    sub al, '0'
+    movzx eax, al
+    ret
+
+badChoice:
+    xor eax, eax
+    ret
+ReadMenuChoice ENDP
 
 ; ReadFirstNumber calls Member 1's input, validation, and storage flow.
 ReadFirstNumber PROC
@@ -123,17 +158,20 @@ ReadSecondNumber ENDP
 main PROC
 mainLoop:
     call ShowMenu
-    call ReadInt
+    call ReadMenuChoice
     mov choice, eax
 
-    cmp choice, 4
+    cmp choice, 5
     je exitProgram
 
     cmp choice, 1
     jl invalidChoice
 
-    cmp choice, 3
+    cmp choice, 4
     jg invalidChoice
+
+    cmp choice, 4
+    je doExpression
 
     call ReadFirstNumber
     cmp eax, 1
@@ -162,6 +200,12 @@ doSubtraction:
 
 doMultiplication:
     call MultiplyLarge
+    jmp showAnswer
+
+doExpression:
+    call RunExpressionMode
+    cmp eax, 1
+    jne mainLoop
     jmp showAnswer
 
 showAnswer:
