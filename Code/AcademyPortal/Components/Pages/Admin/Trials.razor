@@ -1,0 +1,169 @@
+﻿@page "/admin/trials"
+@using AcademyPortal.Models
+@using AcademyPortal.Services
+@inject TrialService TrialService
+
+<PageTitle>Trial Requests — Admin Panel</PageTitle>
+
+<div style="display:flex; min-height:100vh;">
+
+    <!-- SIDEBAR -->
+    <div class="admin-sidebar">
+        <div class="admin-logo">🌸 AcademyPortal</div>
+        <ul class="admin-menu">
+            <li><a href="/admin/dashboard">📊 Dashboard</a></li>
+            <li><a href="/admin/students">👨‍🎓 Students</a></li>
+            <li><a href="/admin/teachers">👨‍🏫 Teachers</a></li>
+            <li><a href="/admin/enrollments">📝 Enrollments</a></li>
+            <li><a href="/admin/trials" class="active">🎯 Trial Requests</a></li>
+            <li><a href="/admin/notifications">🔔 Notifications</a></li>
+            <li><a href="/">🔓 Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="admin-content">
+        <div class="admin-header">
+            <h1>Trial Requests</h1>
+            <p>Manage and respond to all trial class requests</p>
+        </div>
+
+        @if (trials == null)
+        {
+            <p style="color:var(--text-muted);">Loading...</p>
+        }
+        else if (trials.Count == 0)
+        {
+            <div class="feature-card" style="text-align:center; padding:40px;">
+                <div style="font-size:40px; margin-bottom:12px;">📭</div>
+                <div class="card-title">No trial requests yet</div>
+                <div class="card-desc">Trial request submissions will appear here.</div>
+            </div>
+        }
+        else
+        {
+            <div style="background:var(--bg-card); border:0.5px solid var(--border); border-radius:12px; overflow:hidden;">
+                <table class="academy-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Student Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                            <th>Meeting Link</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in trials)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>@item.StudentName</td>
+                                <td>@item.Email</td>
+                                <td>@item.Phone</td>
+                                <td>@item.Subject</td>
+                                <td>
+                                    <span class="@GetBadgeClass(item.Status)">@item.Status</span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.MeetingLink))
+                                    {
+                                        <a href="@item.MeetingLink" target="_blank"
+                                               style="color:var(--rose-light); font-size:12px;">
+                                            🔗 Open Link
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <input type="text"
+                                               placeholder="Paste meet link"
+                                               @bind="meetingLinks[item.Id]"
+                                               style="width:140px; padding:4px 8px; font-size:12px;" />
+                                        <button class="btn-rose"
+                                                style="padding:4px 10px; font-size:11px; margin-left:4px;"
+                                                @onclick="() => SaveLink(item.Id)">
+                                            Save
+                                        </button>
+                                    }
+                                </td>
+                                <td style="display:flex; gap:6px; flex-wrap:wrap;">
+                                    <select style="padding:4px 8px; font-size:12px; width:120px;"
+                                            @bind="selectedStatus[item.Id]">
+                                        <option>Pending</option>
+                                        <option>Approved</option>
+                                        <option>Contacted</option>
+                                    </select>
+                                    <button class="btn-rose"
+                                            style="padding:4px 10px; font-size:11px;"
+                                            @onclick="() => UpdateStatus(item.Id)">
+                                        ✅
+                                    </button>
+                                    <button class="btn-outline-rose"
+                                            style="padding:4px 10px; font-size:11px;"
+                                            @onclick="() => DeleteTrial(item.Id)">
+                                        🗑
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<TrialRequest>? trials;
+    private Dictionary<int, string> selectedStatus = new();
+    private Dictionary<int, string> meetingLinks = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        trials = await TrialService.GetAllAsync();
+        foreach (var t in trials)
+        {
+            selectedStatus[t.Id] = t.Status;
+            meetingLinks[t.Id] = "";
+        }
+    }
+
+    private async Task UpdateStatus(int id)
+    {
+        if (selectedStatus.ContainsKey(id))
+        {
+            await TrialService.UpdateStatusAsync(id, selectedStatus[id]);
+            await LoadData();
+        }
+    }
+
+    private async Task SaveLink(int id)
+    {
+        if (meetingLinks.ContainsKey(id) && !string.IsNullOrWhiteSpace(meetingLinks[id]))
+        {
+            await TrialService.UpdateMeetingLinkAsync(id, meetingLinks[id]);
+            await LoadData();
+        }
+    }
+
+    private async Task DeleteTrial(int id)
+    {
+        await TrialService.DeleteAsync(id);
+        await LoadData();
+    }
+
+    private string GetBadgeClass(string status) => status switch
+    {
+        "Approved" => "badge-approved",
+        "Contacted" => "badge-contacted",
+        _ => "badge-pending"
+    };
+}

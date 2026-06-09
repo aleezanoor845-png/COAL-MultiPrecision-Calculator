@@ -1,0 +1,9 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="COAL_Calculator/COAL_Calculator.vcxproj" Id="3886a02c-7b07-4267-ad93-bd7648d0a56e">
+    <Platform Solution="Debug|x64" Project="Win32" />
+  </Project>
+</Solution>

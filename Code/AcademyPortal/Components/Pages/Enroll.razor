@@ -1,0 +1,101 @@
+﻿@page "/enroll"
+@using AcademyPortal.Models
+@using AcademyPortal.Services
+@inject EnrollmentService EnrollmentService
+
+<PageTitle>Enroll — AcademyPortal</PageTitle>
+
+<div class="page-header">
+    <h1>📝 Student Enrollment</h1>
+    <p>Fill in the details below to enroll your child in our academy</p>
+</div>
+
+<div class="section-wrapper">
+    <div class="form-wrapper">
+        <div class="form-title">Enrollment Form</div>
+        <div class="form-subtitle">All fields are required. We will contact you within 24 hours.</div>
+
+        @if (isSuccess)
+        {
+            <div class="alert-success">
+                ✅ Enrollment submitted successfully! We will contact you soon.
+            </div>
+        }
+
+        <EditForm Model="enrollment" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Student Name</label>
+                    <InputText @bind-Value="enrollment.StudentName" placeholder="e.g. Hina Naeem" />
+                    <ValidationMessage For="@(() => enrollment.StudentName)" class="validation-message" />
+                </div>
+                <div class="form-group">
+                    <label>Parent Name</label>
+                    <InputText @bind-Value="enrollment.ParentName" placeholder="e.g. Naeem Ullah" />
+                    <ValidationMessage For="@(() => enrollment.ParentName)" class="validation-message" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <InputText @bind-Value="enrollment.Email" placeholder="242679@students.au.edu.pk" />
+                    <ValidationMessage For="@(() => enrollment.Email)" class="validation-message" />
+                </div>
+                <div class="form-group">
+                    <label>Country</label>
+                    <InputSelect @bind-Value="enrollment.Country">
+                        <option value="">-- Select Country --</option>
+                        <option>United Kingdom</option>
+                        <option>United States</option>
+                        <option>Canada</option>
+                        <option>Australia</option>
+                        <option>Saudi Arabia</option>
+                        <option>UAE</option>
+                        <option>Qatar</option>
+                        <option>Germany</option>
+                        <option>Other</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => enrollment.Country)" class="validation-message" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Subject</label>
+                    <InputSelect @bind-Value="enrollment.Subject">
+                        <option value="">-- Select Subject --</option>
+                        <option>Mathematics</option>
+                        <option>Physics</option>
+                        <option>Chemistry</option>
+                        <option>Biology</option>
+                        <option>English</option>
+                        <option>Urdu</option>
+                        <option>Islamiyat</option>
+                        <option>Computer Science</option>
+                        <option>Other</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => enrollment.Subject)" class="validation-message" />
+                </div>
+            </div>
+
+            <button type="submit" class="btn-rose" style="width:100%; margin-top:8px;">
+                Submit Enrollment 🌸
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private Enrollment enrollment = new();
+    private bool isSuccess = false;
+
+    private async Task HandleSubmit()
+    {
+        await EnrollmentService.AddAsync(enrollment);
+        isSuccess = true;
+        enrollment = new();
+    }
+}

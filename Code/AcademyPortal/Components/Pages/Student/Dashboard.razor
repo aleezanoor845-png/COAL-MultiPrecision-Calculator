@@ -1,0 +1,432 @@
+﻿@page "/student/dashboard/{StudentId:int}"
+@using AcademyPortal.Models
+@using AcademyPortal.Services
+@inject StudentService StudentService
+@inject ScheduleService ScheduleService
+@inject ChatService ChatService
+@inject NotificationService NotificationService
+@inject EnrollmentService EnrollmentService
+@inject NavigationManager Navigation
+
+<PageTitle>Student Dashboard — AcademyPortal</PageTitle>
+
+@if (student == null)
+{
+    <div style="min-height:100vh; display:flex; align-items:center; justify-content:center;">
+        <p style="color:var(--text-muted);">Loading...</p>
+    </div>
+}
+else
+{
+    <div style="display:flex; min-height:100vh;">
+        <div class="admin-sidebar">
+            <div class="admin-logo">🌸 AcademyPortal</div>
+            <div style="padding:16px 24px; border-bottom:0.5px solid var(--border);">
+                <div style="font-size:13px; color:var(--rose-light);">@student.FullName</div>
+                <div style="font-size:11px; color:var(--text-muted);">@student.RollNumber</div>
+            </div>
+            <ul class="admin-menu">
+                <li><a href="javascript:void(0)" class="@(activeTab == "dashboard" ? "active" : "")" @onclick='() => SetTab("dashboard")'>📊 Dashboard</a></li>
+                <li><a href="javascript:void(0)" class="@(activeTab == "enroll" ? "active" : "")" @onclick='() => SetTab("enroll")'>📝 Enroll in Subject</a></li>
+                <li><a href="javascript:void(0)" class="@(activeTab == "schedule" ? "active" : "")" @onclick='() => SetTab("schedule")'>📅 Class Schedule</a></li>
+                <li><a href="javascript:void(0)" class="@(activeTab == "chat" ? "active" : "")" @onclick='() => SetTab("chat")'>💬 Chat</a></li>
+                <li>
+                    <a href="javascript:void(0)" class="@(activeTab == "notifications" ? "active" : "")" @onclick='() => SetTab("notifications")'>
+                        🔔 Notifications
+                        @if (unreadCount > 0)
+                        {
+                            <span style="background:var(--rose); color:white; border-radius:20px; padding:1px 7px; font-size:10px; margin-left:6px;">@unreadCount</span>
+                        }
+                    </a>
+                </li>
+                <li><a href="/">🚪 Logout</a></li>
+            </ul>
+        </div>
+
+        <div class="admin-content">
+
+            @if (activeTab == "dashboard")
+            {
+                <div class="admin-header">
+                    <h1>Welcome, @student.FullName! 🌸</h1>
+                    <p>Roll Number: @student.RollNumber</p>
+                </div>
+                <div class="stat-cards">
+                    <div class="stat-card">
+                        <div class="stat-card-num">@enrollments.Count</div>
+                        <div class="stat-card-label">Enrolled Subjects</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-num">@schedules.Count</div>
+                        <div class="stat-card-label">Scheduled Classes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-num">@unreadCount</div>
+                        <div class="stat-card-label">Unread Notifications</div>
+                    </div>
+                </div>
+                <div class="section-heading" style="margin-bottom:16px;">My Enrolled Subjects</div>
+                @if (enrollments.Count == 0)
+                {
+                    <div class="feature-card" style="text-align:center; padding:32px;">
+                        <div style="font-size:36px; margin-bottom:12px;">📭</div>
+                        <div class="card-title">No subjects enrolled yet</div>
+                        <div class="card-desc" style="margin-bottom:16px;">Go to Enroll in Subject to get started!</div>
+                        <button class="btn-rose" @onclick='() => SetTab("enroll")'>Enroll Now</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="cards-grid">
+                        @foreach (var e in enrollments)
+                        {
+                            <div class="feature-card">
+                                <div class="card-icon">📚</div>
+                                <div class="card-title">@e.Subject</div>
+                                <div class="card-desc">Semester: @e.Semester</div>
+                                <div style="margin-top:8px;">
+                                    <span class="@(e.Status == "Approved" ? "badge-approved" : "badge-pending")">@e.Status</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+
+            @if (activeTab == "enroll")
+            {
+                <div class="admin-header">
+                    <h1>📝 Enroll in Subject</h1>
+                    <p>Select your semester and subject to enroll</p>
+                </div>
+                @if (enrollSuccess)
+                {
+                    <div class="alert-success">✅ Enrollment submitted successfully! Admin will review it soon.</div>
+                }
+                <div class="form-wrapper" style="margin:0;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Semester</label>
+                            <select @bind="selectedSemester" @bind:after="LoadSubjectsForEnroll">
+                                <option value="">-- Select Semester --</option>
+                                <option>Semester 1</option>
+                                <option>Semester 2</option>
+                                <option>Semester 3</option>
+                                <option>Semester 4</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Subject</label>
+                            <select @bind="selectedSubject">
+                                <option value="">-- Select Subject --</option>
+                                @foreach (var sub in enrollSubjectList)
+                                {
+                                    <option>@sub</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn-rose" style="width:100%; margin-top:8px;" @onclick="HandleEnroll">
+                        Submit Enrollment 🌸
+                    </button>
+                </div>
+            }
+
+            @if (activeTab == "schedule")
+            {
+                <div class="admin-header">
+                    <h1>📅 Class Schedule</h1>
+                    <p>Your upcoming classes and meeting links</p>
+                </div>
+                @if (schedules.Count == 0)
+                {
+                    <div class="feature-card" style="text-align:center; padding:32px;">
+                        <div style="font-size:36px; margin-bottom:12px;">📭</div>
+                        <div class="card-title">No classes scheduled yet</div>
+                        <div class="card-desc">Your teacher will schedule classes soon.</div>
+                    </div>
+                }
+                else
+                {
+                    <div style="background:var(--bg-card); border:0.5px solid var(--border); border-radius:12px; overflow:hidden;">
+                        <table class="academy-table">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Semester</th>
+                                    <th>Day</th>
+                                    <th>Time</th>
+                                    <th>Teacher</th>
+                                    <th>Meeting</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in schedules)
+                                {
+                                    <tr>
+                                        <td>@s.Subject</td>
+                                        <td>@s.Semester</td>
+                                        <td>@s.Day</td>
+                                        <td>@s.Time</td>
+                                        <td>@(s.Teacher?.FullName ?? "TBA")</td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(s.MeetingLink))
+                                            {
+                                                <a href="@s.MeetingLink" target="_blank" class="btn-rose" style="padding:4px 12px; font-size:12px;">🔗 Join</a>
+                                            }
+                                            else
+                                            {
+                                                <span style="color:var(--text-muted); font-size:12px;">Not set yet</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+
+            @if (activeTab == "chat")
+            {
+                <div class="admin-header">
+                    <h1>💬 Chat with Teacher</h1>
+                    <p>Ask questions and communicate with your teacher</p>
+                </div>
+                <div class="form-row" style="margin-bottom:16px;">
+                    <div class="form-group">
+                        <label>Semester</label>
+                        <select @bind="chatSemester" @bind:after="LoadSubjectsForChat">
+                            <option value="">-- Select Semester --</option>
+                            <option>Semester 1</option>
+                            <option>Semester 2</option>
+                            <option>Semester 3</option>
+                            <option>Semester 4</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <select @bind="chatSubject" @bind:after="LoadChat">
+                            <option value="">-- Select Subject --</option>
+                            @foreach (var sub in chatSubjectList)
+                            {
+                                <option>@sub</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(chatSubject))
+                {
+                    <div style="background:var(--bg-card); border:0.5px solid var(--border); border-radius:12px; padding:20px; min-height:300px; max-height:400px; overflow-y:auto; margin-bottom:16px;">
+                        @if (chatMessages.Count == 0)
+                        {
+                            <p style="color:var(--text-muted); text-align:center; margin-top:100px;">No messages yet. Say hello! 👋</p>
+                        }
+                        @foreach (var msg in chatMessages)
+                        {
+                            <div style="margin-bottom:12px; @(msg.SenderType == "Student" ? "text-align:right;" : "text-align:left;")">
+                                <div style="display:inline-block; background:@(msg.SenderType == "Student" ? "var(--rose)" : "var(--bg-secondary)"); color:white; padding:8px 14px; border-radius:12px; max-width:70%; font-size:13px;">
+                                    <div style="font-size:10px; opacity:0.7; margin-bottom:3px;">@msg.SenderName — @msg.SentAt.ToString("hh:mm tt")</div>
+                                    @msg.Message
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" @bind="newMessage" @onkeypress="HandleChatKeyPress"
+                               placeholder="Type your message..."
+                               style="flex:1; padding:10px 14px; background:var(--bg-secondary); border:0.5px solid var(--border); border-radius:8px; color:var(--text-primary); font-size:14px; outline:none;" />
+                        <button class="btn-rose" @onclick="SendMessage">Send 📤</button>
+                    </div>
+                }
+            }
+
+            @if (activeTab == "notifications")
+            {
+                <div class="admin-header">
+                    <h1>🔔 Notifications</h1>
+                    <p>Messages and updates from admin and teachers</p>
+                </div>
+                @if (notifications.Count == 0)
+                {
+                    <div class="feature-card" style="text-align:center; padding:32px;">
+                        <div style="font-size:36px; margin-bottom:12px;">🔔</div>
+                        <div class="card-title">No notifications yet</div>
+                        <div class="card-desc">You will see updates from admin and teachers here.</div>
+                    </div>
+                }
+                else
+                {
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        @foreach (var n in notifications)
+                        {
+                            <div class="feature-card" style="@(!n.IsRead ? "border-color:var(--rose);" : "")">
+                                <div style="display:flex; justify-content:space-between; align-items:start;">
+                                    <div>
+                                        <div class="card-title">@n.Title</div>
+                                        <div class="card-desc" style="margin-top:4px;">@n.Message</div>
+                                        <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">@n.CreatedAt.ToString("dd MMM yyyy — hh:mm tt")</div>
+                                    </div>
+                                    @if (!n.IsRead)
+                                    {
+                                        <button class="btn-outline-rose" style="padding:4px 12px; font-size:11px; flex-shrink:0;"
+                                                @onclick="() => MarkRead(n.Id)">
+                                            Mark Read ✅
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-approved">Read</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int StudentId { get; set; }
+
+    private AcademyPortal.Models.StudentUser? student;
+    private List<Enrollment> enrollments = new();
+    private List<ClassSchedule> schedules = new();
+    private List<ChatMessage> chatMessages = new();
+    private List<Notification> notifications = new();
+
+    private string activeTab = "dashboard";
+    private string selectedSemester = "";
+    private string selectedSubject = "";
+    private string chatSemester = "";
+    private string chatSubject = "";
+    private string newMessage = "";
+    private bool enrollSuccess = false;
+    private int unreadCount = 0;
+
+    private List<string> enrollSubjectList = new();
+    private List<string> chatSubjectList = new();
+
+    private Dictionary<string, List<string>> semesterSubjects = new()
+    {
+        ["Semester 1"] = new() { "Introduction to Computing", "Calculus & Analytical Geometry", "English Composition", "Islamic Studies", "Functional English" },
+        ["Semester 2"] = new() { "Object Oriented Programming", "Discrete Mathematics", "Digital Logic Design", "Communication Skills", "Pakistan Studies" },
+        ["Semester 3"] = new() { "Data Structures & Algorithms", "Database Systems", "Computer Organization", "Linear Algebra", "Probability & Statistics" },
+        ["Semester 4"] = new() { "Operating Systems", "Software Engineering", "Computer Networks", "Visual Programming", "Web Technologies" }
+    };
+
+    private void SetTab(string tab)
+    {
+        activeTab = tab;
+        enrollSuccess = false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        student = await StudentService.GetByIdAsync(StudentId);
+        if (student == null)
+        {
+            Navigation.NavigateTo("/student/login");
+            return;
+        }
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        enrollments = await StudentService.GetEnrollmentsAsync(StudentId);
+        notifications = await NotificationService.GetStudentNotificationsAsync(StudentId);
+        unreadCount = notifications.Count(n => !n.IsRead);
+
+        if (enrollments.Any())
+        {
+            var semesters = enrollments.Select(e => e.Semester).Distinct().ToList();
+            schedules = new();
+            foreach (var sem in semesters)
+            {
+                var s = await ScheduleService.GetBySemesterAsync(sem);
+                schedules.AddRange(s);
+            }
+        }
+    }
+
+    private void LoadSubjectsForEnroll()
+    {
+        if (!string.IsNullOrEmpty(selectedSemester) && semesterSubjects.ContainsKey(selectedSemester))
+            enrollSubjectList = semesterSubjects[selectedSemester];
+        else
+            enrollSubjectList = new();
+        selectedSubject = "";
+    }
+
+    private void LoadSubjectsForChat()
+    {
+        if (!string.IsNullOrEmpty(chatSemester) && semesterSubjects.ContainsKey(chatSemester))
+            chatSubjectList = semesterSubjects[chatSemester];
+        else
+            chatSubjectList = new();
+        chatSubject = "";
+        chatMessages = new();
+    }
+
+    private async Task HandleEnroll()
+    {
+        if (string.IsNullOrEmpty(selectedSemester) || string.IsNullOrEmpty(selectedSubject)) return;
+
+        var enrollment = new Enrollment
+        {
+            StudentName = student!.FullName,
+            ParentName = "",
+            Email = student.Email,
+            Country = "Pakistan",
+            Semester = selectedSemester,
+            Subject = selectedSubject,
+            StudentUserId = StudentId
+        };
+
+        await EnrollmentService.AddAsync(enrollment);
+        enrollSuccess = true;
+        selectedSemester = "";
+        selectedSubject = "";
+        enrollSubjectList = new();
+        await LoadData();
+    }
+
+    private async Task LoadChat()
+    {
+        if (!string.IsNullOrEmpty(chatSubject) && !string.IsNullOrEmpty(chatSemester))
+            chatMessages = await ChatService.GetMessagesAsync(chatSubject, chatSemester);
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(newMessage) || string.IsNullOrEmpty(chatSubject)) return;
+
+        await ChatService.SendMessageAsync(new ChatMessage
+        {
+            Message = newMessage,
+            SenderType = "Student",
+            SenderName = student!.FullName,
+            Subject = chatSubject,
+            Semester = chatSemester,
+            StudentId = StudentId
+        });
+
+        newMessage = "";
+        await LoadChat();
+    }
+
+    private async Task HandleChatKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SendMessage();
+    }
+
+    private async Task MarkRead(int id)
+    {
+        await NotificationService.MarkReadAsync(id);
+        await LoadData();
+    }
+}
