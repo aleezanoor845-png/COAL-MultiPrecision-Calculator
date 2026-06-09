@@ -1,0 +1,101 @@
+﻿@page "/trial"
+@using AcademyPortal.Models
+@using AcademyPortal.Services
+@inject TrialService TrialService
+
+<PageTitle>Free Trial — AcademyPortal</PageTitle>
+
+<div class="page-header">
+    <h1>🎯 Request a Free Trial</h1>
+    <p>Try a free class before enrolling — no commitment required</p>
+</div>
+
+<div class="section-wrapper">
+    <div class="form-wrapper">
+        <div class="form-title">Free Trial Request</div>
+        <div class="form-subtitle">Submit your details and we will schedule a free trial class for you.</div>
+
+        @if (isSuccess)
+        {
+            <div class="alert-success">
+                ✅ Trial request submitted! We will contact you within 24 hours to schedule your class.
+            </div>
+        }
+
+        <EditForm Model="trial" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Student Name</label>
+                    <InputText @bind-Value="trial.StudentName" placeholder="e.g. Hina Naeem" />
+                    <ValidationMessage For="@(() => trial.StudentName)" class="validation-message" />
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <InputText @bind-Value="trial.Email" placeholder="242679@students.au.edu.pk" />
+                    <ValidationMessage For="@(() => trial.Email)" class="validation-message" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <InputText @bind-Value="trial.Phone" placeholder="+92 3334445556" />
+                    <ValidationMessage For="@(() => trial.Phone)" class="validation-message" />
+                </div>
+                <div class="form-group">
+                    <label>Subject</label>
+                    <InputSelect @bind-Value="trial.Subject">
+                        <option value="">-- Select Subject --</option>
+                        <optgroup label="Semester 1">
+                            <option>Introduction to Computing</option>
+                            <option>Calculus & Analytical Geometry</option>
+                            <option>English Composition</option>
+                            <option>Islamic Studies</option>
+                            <option>Functional English</option>
+                        </optgroup>
+                        <optgroup label="Semester 2">
+                            <option>Object Oriented Programming</option>
+                            <option>Discrete Mathematics</option>
+                            <option>Digital Logic Design</option>
+                            <option>Communication Skills</option>
+                            <option>Pakistan Studies</option>
+                        </optgroup>
+                        <optgroup label="Semester 3">
+                            <option>Data Structures & Algorithms</option>
+                            <option>Database Systems</option>
+                            <option>Computer Organization</option>
+                            <option>Linear Algebra</option>
+                            <option>Probability & Statistics</option>
+                        </optgroup>
+                        <optgroup label="Semester 4">
+                            <option>Operating Systems</option>
+                            <option>Software Engineering</option>
+                            <option>Computer Networks</option>
+                            <option>Visual Programming</option>
+                            <option>Web Technologies</option>
+                        </optgroup>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => trial.Subject)" class="validation-message" />
+                </div>
+            </div>
+
+            <button type="submit" class="btn-rose" style="width:100%; margin-top:8px;">
+                Request Free Trial 🎯
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private TrialRequest trial = new();
+    private bool isSuccess = false;
+
+    private async Task HandleSubmit()
+    {
+        await TrialService.AddAsync(trial);
+        isSuccess = true;
+        trial = new();
+    }
+}

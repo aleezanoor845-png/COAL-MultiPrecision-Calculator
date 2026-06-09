@@ -1,0 +1,380 @@
+﻿@page "/teacher/dashboard/{TeacherId:int}"
+@using AcademyPortal.Models
+@using AcademyPortal.Services
+@inject TeacherService TeacherService
+@inject ScheduleService ScheduleService
+@inject ChatService ChatService
+@inject NotificationService NotificationService
+@inject EnrollmentService EnrollmentService
+@inject NavigationManager Navigation
+
+<PageTitle>Teacher Dashboard — AcademyPortal</PageTitle>
+
+@if (teacher == null)
+{
+    <div style="min-height:100vh; display:flex; align-items:center; justify-content:center;">
+        <p style="color:var(--text-muted);">Loading...</p>
+    </div>
+}
+else
+{
+    <div style="display:flex; min-height:100vh;">
+        <div class="admin-sidebar">
+            <div class="admin-logo">🌸 AcademyPortal</div>
+            <div style="padding:16px 24px; border-bottom:0.5px solid var(--border);">
+                <div style="font-size:13px; color:var(--rose-light);">@teacher.FullName</div>
+                <div style="font-size:11px; color:var(--text-muted);">@teacher.Subject — @teacher.Semester</div>
+            </div>
+            <ul class="admin-menu">
+                <li><a href="javascript:void(0)" class="@(activeTab == "dashboard" ? "active" : "")" @onclick='() => SetTab("dashboard")'>📊 Dashboard</a></li>
+                <li><a href="javascript:void(0)" class="@(activeTab == "students" ? "active" : "")" @onclick='() => SetTab("students")'>👨‍🎓 My Students</a></li>
+                <li><a href="javascript:void(0)" class="@(activeTab == "schedule" ? "active" : "")" @onclick='() => SetTab("schedule")'>📅 Class Schedule</a></li>
+                <li><a href="javascript:void(0)" class="@(activeTab == "chat" ? "active" : "")" @onclick='() => SetTab("chat")'>💬 Chat with Students</a></li>
+                <li>
+                    <a href="javascript:void(0)" class="@(activeTab == "notifications" ? "active" : "")" @onclick='() => SetTab("notifications")'>
+                        🔔 Notifications
+                        @if (unreadCount > 0)
+                        {
+                            <span style="background:var(--rose); color:white; border-radius:20px; padding:1px 7px; font-size:10px; margin-left:6px;">@unreadCount</span>
+                        }
+                    </a>
+                </li>
+                <li><a href="/">🚪 Logout</a></li>
+            </ul>
+        </div>
+
+        <div class="admin-content">
+
+            @if (activeTab == "dashboard")
+            {
+                <div class="admin-header">
+                    <h1>Welcome, @teacher.FullName! 👨‍🏫</h1>
+                    <p>@teacher.Subject — @teacher.Semester — @teacher.Qualification</p>
+                </div>
+                <div class="stat-cards">
+                    <div class="stat-card">
+                        <div class="stat-card-num">@myStudents.Count</div>
+                        <div class="stat-card-label">My Students</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-num">@schedules.Count</div>
+                        <div class="stat-card-label">Scheduled Classes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-num">@unreadCount</div>
+                        <div class="stat-card-label">Unread Notifications</div>
+                    </div>
+                </div>
+                <div class="section-heading" style="margin-bottom:16px;">Quick Actions</div>
+                <div class="cards-grid" style="max-width:600px;">
+                    <div class="feature-card" style="cursor:pointer;" @onclick='() => SetTab("schedule")'>
+                        <div class="card-icon">📅</div>
+                        <div class="card-title">Add Class Schedule</div>
+                        <div class="card-desc">Set day, time and meeting link for your classes.</div>
+                    </div>
+                    <div class="feature-card" style="cursor:pointer;" @onclick='() => SetTab("chat")'>
+                        <div class="card-icon">💬</div>
+                        <div class="card-title">Chat with Students</div>
+                        <div class="card-desc">Answer questions from your enrolled students.</div>
+                    </div>
+                </div>
+            }
+
+            @if (activeTab == "students")
+            {
+                <div class="admin-header">
+                    <h1>👨‍🎓 My Students</h1>
+                    <p>Students enrolled in @teacher.Subject — @teacher.Semester</p>
+                </div>
+                @if (myStudents.Count == 0)
+                {
+                    <div class="feature-card" style="text-align:center; padding:32px;">
+                        <div style="font-size:36px; margin-bottom:12px;">📭</div>
+                        <div class="card-title">No students enrolled yet</div>
+                        <div class="card-desc">Students who enroll in your subject will appear here.</div>
+                    </div>
+                }
+                else
+                {
+                    <div style="background:var(--bg-card); border:0.5px solid var(--border); border-radius:12px; overflow:hidden;">
+                        <table class="academy-table">
+                            <thead>
+                                <tr><th>Student Name</th><th>Email</th><th>Semester</th><th>Subject</th><th>Status</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in myStudents)
+                                {
+                                    <tr>
+                                        <td>@s.StudentName</td>
+                                        <td>@s.Email</td>
+                                        <td>@s.Semester</td>
+                                        <td>@s.Subject</td>
+                                        <td><span class="@(s.Status == "Approved" ? "badge-approved" : "badge-pending")">@s.Status</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+
+            @if (activeTab == "schedule")
+            {
+                <div class="admin-header">
+                    <h1>📅 Class Schedule</h1>
+                    <p>Manage your class timings and meeting links</p>
+                </div>
+                @if (scheduleSuccess)
+                {
+                    <div class="alert-success">✅ Schedule added successfully!</div>
+                }
+                <div class="form-wrapper" style="margin:0 0 24px 0;">
+                    <div class="form-title" style="font-size:16px; margin-bottom:16px;">Add New Class</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Day</label>
+                            <select @bind="newSchedule.Day">
+                                <option value="">-- Select Day --</option>
+                                <option>Monday</option>
+                                <option>Tuesday</option>
+                                <option>Wednesday</option>
+                                <option>Thursday</option>
+                                <option>Friday</option>
+                                <option>Saturday</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Time</label>
+                            <select @bind="newSchedule.Time">
+                                <option value="">-- Select Time --</option>
+                                <option>08:00 AM</option>
+                                <option>09:00 AM</option>
+                                <option>10:00 AM</option>
+                                <option>11:00 AM</option>
+                                <option>12:00 PM</option>
+                                <option>02:00 PM</option>
+                                <option>03:00 PM</option>
+                                <option>04:00 PM</option>
+                                <option>06:00 PM</option>
+                                <option>07:00 PM</option>
+                                <option>08:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label>Meeting Link (Google Meet / Zoom)</label>
+                        <input type="text" @bind="newSchedule.MeetingLink" placeholder="https://meet.google.com/xxx" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label>Description (Optional)</label>
+                        <input type="text" @bind="newSchedule.Description" placeholder="e.g. Chapter 3 — Functions" />
+                    </div>
+                    <button class="btn-rose" style="width:100%;" @onclick="AddSchedule">Add Class Schedule 📅</button>
+                </div>
+                @if (schedules.Count > 0)
+                {
+                    <div style="background:var(--bg-card); border:0.5px solid var(--border); border-radius:12px; overflow:hidden;">
+                        <table class="academy-table">
+                            <thead>
+                                <tr><th>Subject</th><th>Day</th><th>Time</th><th>Meeting Link</th><th>Description</th><th>Action</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in schedules)
+                                {
+                                    <tr>
+                                        <td>@s.Subject</td>
+                                        <td>@s.Day</td>
+                                        <td>@s.Time</td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(s.MeetingLink))
+                                            {
+                                                <a href="@s.MeetingLink" target="_blank" style="color:var(--rose-light); font-size:12px;">🔗 Link</a>
+                                            }
+                                            else
+                                            {
+
+                                                <span style="color:var(--text-muted); font-size:12px;">Not set</span>
+                                            }
+                                        </td>
+                                        <td>@(string.IsNullOrEmpty(s.Description) ? "—" : s.Description)</td>
+                                        <td><button class="btn-outline-rose" style="padding:4px 10px; font-size:11px;" @onclick="() => DeleteSchedule(s.Id)">🗑</button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+
+            @if (activeTab == "chat")
+            {
+                <div class="admin-header">
+                    <h1>💬 Chat with Students</h1>
+                    <p>@teacher.Subject — @teacher.Semester</p>
+                </div>
+                <div style="background:var(--bg-card); border:0.5px solid var(--border); border-radius:12px; padding:20px; min-height:300px; max-height:400px; overflow-y:auto; margin-bottom:16px;">
+                    @if (chatMessages.Count == 0)
+                    {
+                        <p style="color:var(--text-muted); text-align:center; margin-top:100px;">No messages yet. Students will message you here! 👋</p>
+                    }
+                    @foreach (var msg in chatMessages)
+                    {
+                        <div style="margin-bottom:12px; @(msg.SenderType == "Teacher" ? "text-align:right;" : "text-align:left;")">
+                            <div style="display:inline-block; background:@(msg.SenderType == "Teacher" ? "var(--rose)" : "var(--bg-secondary)"); color:white; padding:8px 14px; border-radius:12px; max-width:70%; font-size:13px;">
+                                <div style="font-size:10px; opacity:0.7; margin-bottom:3px;">@msg.SenderName — @msg.SentAt.ToString("hh:mm tt")</div>
+                                @msg.Message
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" @bind="newMessage" @onkeypress="HandleChatKeyPress"
+                           placeholder="Type your reply..."
+                           style="flex:1; padding:10px 14px; background:var(--bg-secondary); border:0.5px solid var(--border); border-radius:8px; color:var(--text-primary); font-size:14px; outline:none;" />
+                    <button class="btn-rose" @onclick="SendMessage">Send 📤</button>
+                </div>
+            }
+
+            @if (activeTab == "notifications")
+            {
+                <div class="admin-header">
+                    <h1>🔔 Notifications</h1>
+                    <p>Messages from admin</p>
+                </div>
+                @if (notifications.Count == 0)
+                {
+                    <div class="feature-card" style="text-align:center; padding:32px;">
+                        <div style="font-size:36px; margin-bottom:12px;">🔔</div>
+                        <div class="card-title">No notifications yet</div>
+                        <div class="card-desc">Admin notifications will appear here.</div>
+                    </div>
+                }
+                else
+                {
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        @foreach (var n in notifications)
+                        {
+                            <div class="feature-card" style="@(!n.IsRead ? "border-color:var(--rose);" : "")">
+                                <div style="display:flex; justify-content:space-between; align-items:start;">
+                                    <div>
+                                        <div class="card-title">@n.Title</div>
+                                        <div class="card-desc" style="margin-top:4px;">@n.Message</div>
+                                        <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">@n.CreatedAt.ToString("dd MMM yyyy — hh:mm tt")</div>
+                                    </div>
+                                    @if (!n.IsRead)
+                                    {
+                                        <button class="btn-outline-rose" style="padding:4px 12px; font-size:11px; flex-shrink:0;"
+                                                @onclick="() => MarkRead(n.Id)">
+                                            Mark Read ✅
+                                        </button>
+                                    }
+                                    else
+                                    {
+
+                                        <span class="badge-approved">Read</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int TeacherId { get; set; }
+
+    private TeacherUser? teacher;
+    private List<Enrollment> myStudents = new();
+    private List<ClassSchedule> schedules = new();
+    private List<ChatMessage> chatMessages = new();
+    private List<Notification> notifications = new();
+    private ClassSchedule newSchedule = new();
+
+    private string activeTab = "dashboard";
+    private string newMessage = "";
+    private bool scheduleSuccess = false;
+    private int unreadCount = 0;
+
+    private void SetTab(string tab)
+    {
+        activeTab = tab;
+        scheduleSuccess = false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        teacher = await TeacherService.GetByIdAsync(TeacherId);
+        if (teacher == null)
+        {
+            Navigation.NavigateTo("/teacher/login");
+            return;
+        }
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        var allEnrollments = await EnrollmentService.GetAllAsync();
+        myStudents = allEnrollments
+            .Where(e => e.Subject == teacher!.Subject && e.Semester == teacher.Semester)
+            .ToList();
+
+        schedules = await ScheduleService.GetByTeacherAsync(TeacherId);
+        notifications = await NotificationService.GetTeacherNotificationsAsync(TeacherId);
+        unreadCount = notifications.Count(n => !n.IsRead);
+        chatMessages = await ChatService.GetMessagesAsync(teacher!.Subject, teacher.Semester);
+    }
+
+    private async Task AddSchedule()
+    {
+        if (string.IsNullOrEmpty(newSchedule.Day) || string.IsNullOrEmpty(newSchedule.Time)) return;
+
+        newSchedule.Subject = teacher!.Subject;
+        newSchedule.Semester = teacher.Semester;
+        newSchedule.TeacherId = TeacherId;
+
+        await ScheduleService.AddAsync(newSchedule);
+        scheduleSuccess = true;
+        newSchedule = new();
+        await LoadData();
+    }
+
+    private async Task DeleteSchedule(int id)
+    {
+        await ScheduleService.DeleteAsync(id);
+        await LoadData();
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(newMessage)) return;
+
+        await ChatService.SendMessageAsync(new ChatMessage
+        {
+            Message = newMessage,
+            SenderType = "Teacher",
+            SenderName = teacher!.FullName,
+            Subject = teacher.Subject,
+            Semester = teacher.Semester,
+            TeacherId = TeacherId
+        });
+
+        newMessage = "";
+        await LoadData();
+    }
+
+    private async Task HandleChatKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SendMessage();
+    }
+
+    private async Task MarkRead(int id)
+    {
+        await NotificationService.MarkReadAsync(id);
+        await LoadData();
+    }
+}

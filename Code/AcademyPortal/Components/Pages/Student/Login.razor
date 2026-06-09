@@ -1,0 +1,65 @@
+﻿@page "/student/login"
+@using AcademyPortal.Services
+@inject StudentService StudentService
+@inject NavigationManager Navigation
+
+<PageTitle>Student Login — AcademyPortal</PageTitle>
+
+<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px 20px;">
+    <div class="form-wrapper" style="width:100%; max-width:440px;">
+
+        <div style="text-align:center; margin-bottom:28px;">
+            <div style="font-size:48px; margin-bottom:12px;">👨‍🎓</div>
+            <div class="form-title" style="text-align:center;">Student Login</div>
+            <div class="form-subtitle" style="text-align:center;">Welcome back to AcademyPortal</div>
+        </div>
+
+        @if (isError)
+        {
+            <div class="alert-danger">❌ Invalid email or password. Please try again.</div>
+        }
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label>Email Address</label>
+            <input type="email" @bind="email" placeholder="242679@students.au.edu.pk" />
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label>Password</label>
+            <input type="password" @bind="password" placeholder="Enter your password" />
+        </div>
+
+        <button class="btn-rose" style="width:100%;" @onclick="HandleLogin">
+            Login 🔐
+        </button>
+
+        <div style="text-align:center; margin-top:20px;">
+            <span style="color:var(--text-muted); font-size:13px;">Don't have an account? </span>
+            <a href="/student/register" style="color:var(--rose-light); font-size:13px;">Register here</a>
+        </div>
+
+        <div style="text-align:center; margin-top:12px;">
+            <a href="/" style="color:var(--text-muted); font-size:13px;">← Back to Home</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string email = "";
+    private string password = "";
+    private bool isError = false;
+
+    private async Task HandleLogin()
+    {
+        isError = false;
+        var student = await StudentService.LoginAsync(email, password);
+        if (student != null)
+        {
+            Navigation.NavigateTo($"/student/dashboard/{student.Id}");
+        }
+        else
+        {
+            isError = true;
+        }
+    }
+}

@@ -1,0 +1,104 @@
+﻿@page "/admin/dashboard"
+@using AcademyPortal.Services
+@inject EnrollmentService EnrollmentService
+@inject TrialService TrialService
+@inject StudentService StudentService
+@inject TeacherService TeacherService
+@inject NavigationManager Navigation
+
+<PageTitle>Dashboard — Admin Panel</PageTitle>
+
+<div style="display:flex; min-height:100vh;">
+
+    <!-- SIDEBAR -->
+    <div class="admin-sidebar">
+        <div class="admin-logo">🌸 AcademyPortal</div>
+        <ul class="admin-menu">
+            <li><a href="/admin/dashboard" class="active">📊 Dashboard</a></li>
+            <li><a href="/admin/students">👨‍🎓 Students</a></li>
+            <li><a href="/admin/teachers">👨‍🏫 Teachers</a></li>
+            <li><a href="/admin/enrollments">📝 Enrollments</a></li>
+            <li><a href="/admin/trials">🎯 Trial Requests</a></li>
+            <li><a href="/admin/notifications">🔔 Notifications</a></li>
+            <li><a href="/">🔓 Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="admin-content">
+        <div class="admin-header">
+            <h1>Dashboard</h1>
+            <p>Welcome back Admin! Here is your academy overview.</p>
+        </div>
+
+        <!-- STAT CARDS -->
+        <div class="stat-cards">
+            <div class="stat-card">
+                <div class="stat-card-num">@studentCount</div>
+                <div class="stat-card-label">Total Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-num">@teacherCount</div>
+                <div class="stat-card-label">Total Teachers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-num">@enrollmentCount</div>
+                <div class="stat-card-label">Enrollments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-num">@trialCount</div>
+                <div class="stat-card-label">Trial Requests</div>
+            </div>
+        </div>
+
+        <!-- QUICK LINKS -->
+        <div class="section-heading" style="margin-bottom:16px;">Quick Actions</div>
+        <div class="cards-grid">
+            <div class="feature-card" style="cursor:pointer;"
+                 @onclick='() => Navigation.NavigateTo("/admin/students")'>
+                <div class="card-icon">👨‍🎓</div>
+                <div class="card-title">Manage Students</div>
+                <div class="card-desc">View all registered students and send them notifications.</div>
+            </div>
+            <div class="feature-card" style="cursor:pointer;"
+                 @onclick='() => Navigation.NavigateTo("/admin/teachers")'>
+                <div class="card-icon">👨‍🏫</div>
+                <div class="card-title">Manage Teachers</div>
+                <div class="card-desc">Approve teachers and send them notifications.</div>
+            </div>
+            <div class="feature-card" style="cursor:pointer;"
+                 @onclick='() => Navigation.NavigateTo("/admin/enrollments")'>
+                <div class="card-icon">📝</div>
+                <div class="card-title">Enrollments</div>
+                <div class="card-desc">View and manage all student enrollment submissions.</div>
+            </div>
+            <div class="feature-card" style="cursor:pointer;"
+                 @onclick='() => Navigation.NavigateTo("/admin/trials")'>
+                <div class="card-icon">🎯</div>
+                <div class="card-title">Trial Requests</div>
+                <div class="card-desc">View, approve and assign meeting links to trial requests.</div>
+            </div>
+            <div class="feature-card" style="cursor:pointer;"
+                 @onclick='() => Navigation.NavigateTo("/admin/notifications")'>
+                <div class="card-icon">🔔</div>
+                <div class="card-title">Send Notifications</div>
+                <div class="card-desc">Send notifications to students, teachers or everyone.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int studentCount = 0;
+    private int teacherCount = 0;
+    private int enrollmentCount = 0;
+    private int trialCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        studentCount = await StudentService.GetCountAsync();
+        teacherCount = await TeacherService.GetCountAsync();
+        enrollmentCount = await EnrollmentService.GetCountAsync();
+        trialCount = await TrialService.GetCountAsync();
+    }
+}

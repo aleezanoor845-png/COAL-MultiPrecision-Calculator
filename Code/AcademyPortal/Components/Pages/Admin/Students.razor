@@ -1,0 +1,152 @@
+﻿@page "/admin/students"
+@using AcademyPortal.Models
+@using AcademyPortal.Services
+@inject StudentService StudentService
+@inject NotificationService NotificationService
+
+<PageTitle>Students — Admin Panel</PageTitle>
+
+<div style="display:flex; min-height:100vh;">
+
+    <!-- SIDEBAR -->
+    <div class="admin-sidebar">
+        <div class="admin-logo">🌸 AcademyPortal</div>
+        <ul class="admin-menu">
+            <li><a href="/admin/dashboard">📊 Dashboard</a></li>
+            <li><a href="/admin/students" class="active">👨‍🎓 Students</a></li>
+            <li><a href="/admin/teachers">👨‍🏫 Teachers</a></li>
+            <li><a href="/admin/enrollments">📝 Enrollments</a></li>
+            <li><a href="/admin/trials">🎯 Trial Requests</a></li>
+            <li><a href="/admin/notifications">🔔 Notifications</a></li>
+            <li><a href="/">🔓 Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="admin-content">
+        <div class="admin-header">
+            <h1>👨‍🎓 Students</h1>
+            <p>All registered students on AcademyPortal</p>
+        </div>
+
+        @if (showNotifForm)
+        {
+            <div class="form-wrapper" style="margin-bottom:24px;">
+                <div class="form-title" style="font-size:16px; margin-bottom:16px;">
+                    🔔 Send Notification to @selectedStudent?.FullName
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Title</label>
+                    <input type="text" @bind="notifTitle" placeholder="e.g. Class Rescheduled" />
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Message</label>
+                    <textarea @bind="notifMessage" rows="3"
+                              placeholder="Write your message here..."
+                                  style="background:var(--bg-secondary); border:0.5px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--text-primary); font-size:14px; outline:none; width:100%; resize:vertical;">
+                    </textarea>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-rose" @onclick="SendNotification">Send 🔔</button>
+                        <button class="btn-outline-rose" @onclick="() => showNotifForm = false">Cancel</button>
+                    </div>
+                    @if (notifSent)
+                    {
+                        <div class="alert-success" style="margin-top:12px;">✅ Notification sent!</div>
+                    }
+                </div>
+            }
+
+            @if (students == null)
+            {
+                <p style="color:var(--text-muted);">Loading...</p>
+            }
+            else if (students.Count == 0)
+            {
+                <div class="feature-card" style="text-align:center; padding:40px;">
+                    <div style="font-size:40px; margin-bottom:12px;">📭</div>
+                    <div class="card-title">No students registered yet</div>
+                </div>
+            }
+            else
+            {
+                <div style="background:var(--bg-card); border:0.5px solid var(--border); border-radius:12px; overflow:hidden;">
+                    <table class="academy-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Full Name</th>
+                                <th>Roll Number</th>
+                                <th>Email</th>
+                                <th>Registered</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in students)
+                            {
+                                <tr>
+                                    <td>@s.Id</td>
+                                    <td>@s.FullName</td>
+                                    <td>@s.RollNumber</td>
+                                    <td>@s.Email</td>
+                                    <td>@s.RegisteredAt.ToString("dd MMM yyyy")</td>
+                                    <td style="display:flex; gap:6px;">
+                                        <button class="btn-rose" style="padding:4px 10px; font-size:11px;"
+                                                @onclick="() => OpenNotif(s)">
+                                            🔔 Notify
+                                        </button>
+                                        <button class="btn-outline-rose" style="padding:4px 10px; font-size:11px;"
+                                                @onclick="() => DeleteStudent(s.Id)">
+                                            🗑
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+@code {
+    private List<StudentUser>? students;
+    private StudentUser? selectedStudent;
+    private bool showNotifForm = false;
+    private bool notifSent = false;
+    private string notifTitle = "";
+    private string notifMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        students = await StudentService.GetAllAsync();
+    }
+
+    private void OpenNotif(StudentUser s)
+    {
+        selectedStudent = s;
+        showNotifForm = true;
+        notifSent = false;
+        notifTitle = "";
+        notifMessage = "";
+    }
+
+    private async Task SendNotification()
+    {
+        if (string.IsNullOrWhiteSpace(notifTitle) || string.IsNullOrWhiteSpace(notifMessage)) return;
+        await NotificationService.SendToStudentAsync(selectedStudent!.Id, notifTitle, notifMessage);
+        notifSent = true;
+    }
+
+    private async Task DeleteStudent(int id)
+    {
+        await StudentService.DeleteAsync(id);
+        await LoadData();
+    }
+}

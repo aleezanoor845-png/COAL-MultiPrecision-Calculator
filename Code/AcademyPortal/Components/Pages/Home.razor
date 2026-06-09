@@ -1,0 +1,115 @@
+﻿@page "/"
+
+<PageTitle>AcademyPortal — Online Academy for Overseas Pakistanis</PageTitle>
+
+<!-- HERO -->
+<div class="hero-section">
+    <div class="hero-badge">✨ Online Academy — Overseas Pakistanis</div>
+    <h1 class="hero-title">Learn from the Best,<br /><span>Wherever You Are</span></h1>
+    <p class="hero-subtitle">
+        Quality education for Pakistani students around the world.
+        Choose your portal below to get started.
+    </p>
+</div>
+
+<!-- 3 PORTAL CARDS -->
+<div class="section-wrapper">
+    <div class="section-heading">Choose Your Portal</div>
+    <div class="section-title">Who are you?</div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:24px; max-width:960px; margin:0 auto;">
+
+        <!-- STUDENT CARD -->
+        <div class="feature-card" style="text-align:center; padding:40px 24px;">
+            <div style="font-size:56px; margin-bottom:16px;">👨‍🎓</div>
+            <div class="card-title" style="font-size:20px; margin-bottom:8px;">Student Portal</div>
+            <div class="card-desc" style="margin-bottom:24px;">
+                Register or login to access your dashboard, classes, schedule and chat with your teacher.
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <a href="/student/register" class="btn-rose">📝 Register</a>
+                <a href="/student/login" class="btn-outline-rose">🔐 Login</a>
+            </div>
+        </div>
+
+        <!-- TEACHER CARD -->
+        <div class="feature-card" style="text-align:center; padding:40px 24px;">
+            <div style="font-size:56px; margin-bottom:16px;">👨‍🏫</div>
+            <div class="card-title" style="font-size:20px; margin-bottom:8px;">Teacher Portal</div>
+            <div class="card-desc" style="margin-bottom:24px;">
+                Register or login to manage your students, set schedules and assign meeting links.
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <a href="/teacher/register" class="btn-rose">📝 Register</a>
+                <a href="/teacher/login" class="btn-outline-rose">🔐 Login</a>
+            </div>
+        </div>
+
+        <!-- ADMIN CARD -->
+        <div class="feature-card" style="text-align:center; padding:40px 24px;">
+            <div style="font-size:56px; margin-bottom:16px;">🔐</div>
+            <div class="card-title" style="font-size:20px; margin-bottom:8px;">Admin Panel</div>
+            <div class="card-desc" style="margin-bottom:24px;">
+                Admin login to monitor students, teachers, enrollments and send notifications.
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <a href="/admin" class="btn-rose">🔐 Admin Login</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+    <div class="stat-item">
+        <div class="stat-number">500+</div>
+        <div class="stat-label">Students Enrolled</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">20+</div>
+        <div class="stat-label">Subjects Available</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">15+</div>
+        <div class="stat-label">Countries Reached</div>
+    </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section-wrapper">
+    <div class="section-heading">Why Choose Us</div>
+    <div class="section-title">Everything you need to succeed</div>
+    <div class="cards-grid">
+        <div class="feature-card">
+            <div class="card-icon">🌍</div>
+            <div class="card-title">Global Access</div>
+            <div class="card-desc">Study from anywhere in the world with our fully online platform.</div>
+        </div>
+        <div class="feature-card">
+            <div class="card-icon">🎓</div>
+            <div class="card-title">Certified Tutors</div>
+            <div class="card-desc">Learn from qualified and experienced teachers with proven results.</div>
+        </div>
+        <div class="feature-card">
+            <div class="card-icon">⏰</div>
+            <div class="card-title">Flexible Timing</div>
+            <div class="card-desc">Schedule your classes at a time that suits you best.</div>
+        </div>
+        <div class="feature-card">
+            <div class="card-icon">💰</div>
+            <div class="card-title">Affordable Fees</div>
+            <div class="card-desc">Quality education at pocket-friendly prices for every family.</div>
+        </div>
+        <div class="feature-card">
+            <div class="card-icon">📱</div>
+            <div class="card-title">Easy Enrollment</div>
+            <div class="card-desc">Simple online enrollment process — no complicated forms.</div>
+        </div>
+        <div class="feature-card">
+            <div class="card-icon">🤝</div>
+            <div class="card-title">Free Trial</div>
+            <div class="card-desc">Not sure yet? Request a free trial class before committing.</div>
+        </div>
+    </div>
+</div>
